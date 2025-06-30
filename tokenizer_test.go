@@ -9,16 +9,18 @@ import (
 )
 
 func TestTokenizeParse(t *testing.T) {
-	TXKey := TokenKey(100)
-	TRoleKey := TokenKey(101)
-	TAndKey := TokenKey(102)
+	THello := TokenKey(100)
+	TWorld := TokenKey(101)
+	TRoleKey := TokenKey(105)
+	TAndKey := TokenKey(106)
 
 	tokenizer := New()
 	// ignore case
-	tokenizer.DefineTokens(TXKey, []string{"hello"}, IgnoreCaseTokenOption)
+	tokenizer.DefineTokens(THello, []string{"hello"}, IgnoreCaseTokenOption)
 	tokenizer.DefineTokens(TRoleKey, []string{"Role"}, AloneTokenOption)
+	tokenizer.DefineTokens(TWorld, []string{"world"}, IgnoreCaseTokenOption, AloneTokenOption)
 	tokenizer.DefineTokens(TAndKey, []string{"and"})
-	input := "heLlOHhellox and 1 == 0.5+0.5 Role xRolex xandx"
+	input := "HeLLoWoRlD can match,prefixWorld role and roles both not match,but Role and WorLd is match will"
 	stream := tokenizer.ParseString(input)
 	for stream.IsValid() {
 		token := stream.CurrentToken()
