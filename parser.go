@@ -338,17 +338,20 @@ func (p *parsing) parseNumber() bool {
 	return true
 }
 
-// 忽略大小写对比
+// ignore case equals a and b
 func ignoreCaseEquals(a byte, b byte) bool {
-	if a >= 'a' && a <= 'z' {
-		a += 32
-	}
+	return upperCaseAlphabet(a) == upperCaseAlphabet(b)
+}
 
-	if b >= 'a' && b <= 'z' {
-		b += 32
+func upperCaseAlphabet(c byte) byte {
+	if c >= 'a' && c <= 'z' {
+		c -= 32
 	}
+	return c
+}
 
-	return a == b
+func isAlphabet(c byte) bool {
+	return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z')
 }
 
 // ignore case match compares next bytes from data with `r`
@@ -474,10 +477,16 @@ func (p *parsing) parseQuote() bool {
 func (p *parsing) parseToken() bool {
 	if p.curr != 0 {
 		toks := p.t.index[p.curr]
+		if isAlphabet(p.curr) {
+			upCaseByte := upperCaseAlphabet(p.curr)
+			c := p.t.icIndex[upCaseByte]
+			toks = append(toks, c...)
+		}
+		// toks := p.t.index[p.curr]
 		if toks != nil {
 			start := p.pos
 			for _, t := range toks {
-				
+
 				var matchFn func(r []byte, seek bool) bool
 				if t.IgnoreCase {
 					matchFn = p.ignoreCaseMatch

@@ -133,8 +133,10 @@ type Tokenizer struct {
 	stopOnUnknown         bool
 	allowNumberUnderscore bool
 	// all defined custom tokens {key: [token1, token2, ...], ...}
-	tokens         map[TokenKey][]*tokenRef
-	index          map[byte][]*tokenRef
+	tokens map[TokenKey][]*tokenRef
+	index  map[byte][]*tokenRef
+	// with ignore case token index
+	icIndex        map[byte][]*tokenRef
 	quotes         []*StringSettings
 	wSpaces        []byte
 	kwMajorSymbols []rune
@@ -148,6 +150,7 @@ func New() *Tokenizer {
 		// flags:   0,
 		tokens:  map[TokenKey][]*tokenRef{},
 		index:   map[byte][]*tokenRef{},
+		icIndex: map[byte][]*tokenRef{},
 		quotes:  []*StringSettings{},
 		wSpaces: DefaultWhiteSpaces,
 	}
@@ -216,7 +219,7 @@ func AloneTokenOption(ref *tokenRef) {
 	ref.Alone = true
 }
 
-func InsensitiveTokenOption(ref *tokenRef) {
+func IgnoreCaseTokenOption(ref *tokenRef) {
 	ref.IgnoreCase = true
 }
 
@@ -240,14 +243,24 @@ func (t *Tokenizer) DefineTokens(key TokenKey, tokens []string, options ...Defin
 				option(&ref)
 			}
 		}
-		head := ref.Token[0]
+
 		tks = append(tks, &ref)
-		if t.index[head] == nil {
-			t.index[head] = []*tokenRef{}
+		var index map[byte][]*tokenRef
+		var head byte
+
+		if ref.IgnoreCase {
+			index = t.icIndex
+			head = upperCaseAlphabet(ref.Token[0])
+		} else {
+			index = t.index
+			head = ref.Token[0]
 		}
-		t.index[head] = append(t.index[head], &ref)
-		sort.Slice(t.index[head], func(i, j int) bool {
-			return len(t.index[head][i].Token) > len(t.index[head][j].Token)
+		if index[head] == nil {
+			index[head] = []*tokenRef{}
+		}
+		index[head] = append(index[head], &ref)
+		sort.Slice(index[head], func(i, j int) bool {
+			return len(index[head][i].Token) > len(index[head][j].Token)
 		})
 	}
 	t.tokens[key] = tks

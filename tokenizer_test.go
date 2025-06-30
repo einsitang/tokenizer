@@ -2,10 +2,31 @@ package tokenizer
 
 import (
 	"bytes"
-	"github.com/stretchr/testify/require"
 	"strings"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 )
+
+func TestTokenizeParse(t *testing.T) {
+	TXKey := TokenKey(100)
+	TRoleKey := TokenKey(101)
+	TAndKey := TokenKey(102)
+
+	tokenizer := New()
+	// ignore case
+	tokenizer.DefineTokens(TXKey, []string{"hello"}, IgnoreCaseTokenOption)
+	tokenizer.DefineTokens(TRoleKey, []string{"Role"}, AloneTokenOption)
+	tokenizer.DefineTokens(TAndKey, []string{"and"})
+	input := "heLlOHhellox and 1 == 0.5+0.5 Role xRolex xandx"
+	stream := tokenizer.ParseString(input)
+	for stream.IsValid() {
+		token := stream.CurrentToken()
+		t.Logf("[%d:%d] %s %v", token.Line(), token.Offset(), token.ValueString(), token.Key())
+		stream.GoNext()
+	}
+
+}
 
 func TestTokenize(t *testing.T) {
 	type item struct {
@@ -17,6 +38,7 @@ func TestTokenize(t *testing.T) {
 	wordTokenKey := TokenKey(11)
 	dquoteKey := TokenKey(14)
 	tokenizer.AllowNumberUnderscore()
+
 	tokenizer.DefineTokens(condTokenKey, []string{">=", "<=", "==", ">", "<"})
 	tokenizer.DefineTokens(wordTokenKey, []string{"or", "или"})
 	tokenizer.SetWhiteSpaces([]byte{' ', '\t', '\n'})
