@@ -70,6 +70,10 @@ type tokenRef struct {
 	Key TokenKey
 	// Token value as is. Should be unique.
 	Token []byte
+	// Token Alone flag, with true mean token only split with Non-continuous string
+	Alone bool
+	// ignore token case
+	IgnoreCase bool
 }
 
 // QuoteInjectSettings describes open injection token and close injection token.
@@ -206,18 +210,35 @@ func (t *Tokenizer) AllowNumberUnderscore() *Tokenizer {
 	return t
 }
 
+type DefineTokenOption func(*tokenRef)
+
+func AloneTokenOption(ref *tokenRef) {
+	ref.Alone = true
+}
+
+func InsensitiveTokenOption(ref *tokenRef) {
+	ref.IgnoreCase = true
+}
+
 // DefineTokens add custom token.
 // The `key` is the identifier of `tokens`, `tokens` — slice of tokens as string.
 // If a key already exists, tokens will be rewritten.
-func (t *Tokenizer) DefineTokens(key TokenKey, tokens []string) *Tokenizer {
+func (t *Tokenizer) DefineTokens(key TokenKey, tokens []string, options ...DefineTokenOption) *Tokenizer {
 	var tks []*tokenRef
 	if key < 1 {
 		return t
 	}
 	for _, token := range tokens {
 		ref := tokenRef{
-			Key:   key,
-			Token: s2b(token),
+			Key:        key,
+			Token:      s2b(token),
+			Alone:      false,
+			IgnoreCase: false,
+		}
+		if len(options) > 0 {
+			for _, option := range options {
+				option(&ref)
+			}
 		}
 		head := ref.Token[0]
 		tks = append(tks, &ref)
